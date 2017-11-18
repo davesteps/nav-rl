@@ -42,14 +42,14 @@ dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
-dqn.fit(env, nb_steps=500000, verbose=1)
-
+# dqn.fit(env, nb_steps=10000, verbose=1)
 # dqn.save_weights('dqn_10x10_2m')
+dqn.load_weights('model2_1m/dqn_10x10_1m')
 
 # Finally, evaluate our algorithm for 5 episodes.
 dqn.test(env, nb_episodes=1,visualize=True)
 
-makegif('images/','movie10')
+makegif('images/','movie16')
 
 
 dqn.test(env, nb_episodes=5)

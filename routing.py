@@ -39,31 +39,30 @@ class Navigation(gym.Env):
         """
         assert self.action_space.contains(action)
 
-        self.land[self.vessel] = 0
+        self.observation[self.vessel] = 0
         self.move_vessel(action)
         self.step_count += 1
-        self.score -= 1
+        reward = -1
 
         done = False
         if self.destination == self.vessel:
-            self.score += 100
-            # self.land[self.vessel] = 2
-            # self.new_destination()
-            # self.land[self.destination] = 1.5
-            # self.step_count = 0
-            done = True
+            self.score += 1
+            reward = 100
+            self.observation[self.vessel] = 2
+            self.new_destination()
+            self.observation[self.destination] = 1.5
+            self.step_count = 0
+            # done = True
         elif self.hit_land() or self.step_count == 30:
-            self.score -= 100
+            reward = -100
             done = True
         else:
-            self.land[self.vessel] = 2
+            self.observation[self.vessel] = 2
 
-        # if self.score > 500:
-            # done = True
+        if self.score > 10:
+            done = True
 
-        self.observation = self.get_state()
-
-        return self.observation, self.score, done, {"moves": self.step_count, "score": self.score}
+        return self.observation, reward, done, {"moves": self.step_count, "score": self.score}
 
     def new_destination(self):
         # if self.total_score >= 100:
@@ -99,14 +98,14 @@ class Navigation(gym.Env):
 
 
 
-    def get_state(self):
-        canvas = self.land
-        canvas[self.vessel[0], self.vessel[1]] = 2.
-        canvas[self.destination[0], self.destination[1]] = 1.5
-        return canvas
+    # def get_state(self):
+    #     canvas = self.observation
+    #     canvas[self.vessel[0], self.vessel[1]] = 2.
+    #     canvas[self.destination[0], self.destination[1]] = 1.5
+    #     return canvas
 
     def hit_land(self):
-        return self.land[self.vessel] == 1
+        return self.observation[self.vessel] == 1
 
     # def _render(self, mode='human', close=False):
     #     """ Viewer only supports human mode currently. """
@@ -131,19 +130,15 @@ class Navigation(gym.Env):
         else:
             self.previous_action = 1
 
-        self.land = np.ones((self.grid_size,) * 2)
-        self.land[1:-1, 1:-1] = 0.
-        self.land[self.rand_xy(), self.rand_xy()] = 1
-        #make sure vessel and destination are not land
-        self.land[self.vessel] = 0
-        self.land[self.destination] = 0
-
-        self.observation = self.get_state()
+        self.observation = np.ones((self.grid_size,) * 2)
+        self.observation[1:-1, 1:-1] = 0.
+        self.observation[self.rand_xy(), self.rand_xy()] = 1
+        self.observation[self.vessel] = 2.
+        self.observation[self.destination] = 1.5
 
         return self.observation
 
-
-    def render(self, mode='human',close=False):
+    def render(self, mode='human',close=True):
         # pass
         fld = '/Users/davesteps/Google Drive/pycharmProjects/keras_RL/'
         if 'images' not in os.listdir(fld):
