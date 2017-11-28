@@ -16,8 +16,8 @@ class Navigation(gym.Env):
     def __init__(self, grid_size=10):
 
         self.grid_size = grid_size
-        self.action_space = spaces.Discrete(5)
-        self.observation_space = spaces.Box(low=0., high=2., shape=(grid_size,grid_size))
+        self.action_space = spaces.Discrete(4)
+        self.observation_space = spaces.Box(low=0., high=3., shape=(grid_size,grid_size))
         self.observation = None
         self.max_steps = int(sqrt(2*(grid_size**2)))+grid_size
 
@@ -46,17 +46,17 @@ class Navigation(gym.Env):
 
 
         done = False
-        # self.reward -= 1
+        self.reward = -1
         # self.reward -= 1/(self.grid_size**2)
         self.step_count += 1
 
-        v = self.vessel
-        d = self.destination
-        self.reward = -sqrt((v[0] - d[0]) ** 2 + (v[1] - d[1]) ** 2)/self.max_steps
+        # v = self.vessel
+        # d = self.destination
+        # self.reward -= sqrt((v[0] - d[0]) ** 2 + (v[1] - d[1]) ** 2)/self.max_steps
 
         if self.destination == self.vessel:
             # self.score += 1
-            self.reward = 10
+            self.reward += 100
             # self.observation[self.vessel] = 2
             # self.new_destination()
             # self.observation[self.destination] = 1.5
@@ -68,7 +68,7 @@ class Navigation(gym.Env):
         # elif self.step_count == 30:
         #     done = True
         else:
-            self.land[self.vessel] = 2
+            self.land[self.vessel] = 2.
 
         # if self.score > 10:
         #     done = True
@@ -92,10 +92,10 @@ class Navigation(gym.Env):
     def move_vessel(self, action):
 
 
-        if action == 4:
-            action = self.previous_action
-        else:
-            self.previous_action = action
+        # if action == 4:
+        #     action = self.previous_action
+        # else:
+        #     self.previous_action = action
 
         v = self.vessel
 
@@ -112,8 +112,8 @@ class Navigation(gym.Env):
 
     def get_state(self):
         canvas = self.land
-        canvas[self.vessel[0], self.vessel[1]] = 2.
-        canvas[self.destination[0], self.destination[1]] = 1.5
+        canvas[self.vessel[0], self.vessel[1]] = 3.
+        canvas[self.destination[0], self.destination[1]] = 2.
         return canvas
 
     def hit_land(self):
@@ -141,16 +141,16 @@ class Navigation(gym.Env):
         self.prev_reward = 0.0
         self.step_count = 0
 
-        if np.random.randint(2) == 0:
-            self.previous_action = 0
-        else:
-            self.previous_action = 1
+        # if np.random.randint(2) == 0:
+        #     self.previous_action = 0
+        # else:
+        #     self.previous_action = 1
 
         self.land = np.ones((self.grid_size,) * 2)
         self.land[1:-1, 1:-1] = 0.
         self.land[self.rand_xy(), self.rand_xy()] = 1
-        self.land[self.vessel] = 2.
-        self.land[self.destination] = 1.5
+        self.land[self.vessel] = 3.
+        self.land[self.destination] = 2.
 
         self.observation = self.get_state()
 
