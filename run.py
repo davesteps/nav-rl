@@ -1,3 +1,17 @@
+
+
+# do not heavily penalize reaching maxstep - as will penalize arbitrary move
+# Reward to incorporate distance to target
+
+# vessel can pause
+# moving obstacles
+# increase grid size
+# geographical realistic region
+# calc least cost path to compare with
+
+
+
+
 from routing import Navigation
 
 from keras.models import Sequential
@@ -12,7 +26,7 @@ from rl.memory import SequentialMemory
 import numpy as np
 from utils import *
 
-env = Navigation(grid_size=12)
+env = Navigation(grid_size=10)
 
 mem_len = 1
 
@@ -56,13 +70,9 @@ agent.compile(Adam(lr=.00025), metrics=['mae'])
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
-agent.fit(env, nb_steps=2000000, log_interval=10000)
-agent.save_weights('dqn_lap_12x12_1.75m')
+agent.fit(env, nb_steps=1500000, log_interval=10000)
+agent.save_weights('dqn_lap_12x12_2.5m')
 # dqn.load_weights('model2_1m/dqn_10x10_1m')
 #
 # Finally, evaluate our algorithm for 5 episodes.
 agent.test(env, nb_episodes=1,visualize=True)
-#
-# makegif('images/','movie16')
-#
-# dqn.test(env, nb_episodes=5)

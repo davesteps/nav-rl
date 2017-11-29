@@ -44,29 +44,28 @@ class Navigation(gym.Env):
         self.observation[self.vessel] = 0
         self.move_vessel(action)
 
-
         done = False
         self.reward = -1
         # self.reward -= 1/(self.grid_size**2)
         self.step_count += 1
 
-        # v = self.vessel
-        # d = self.destination
-        # self.reward -= sqrt((v[0] - d[0]) ** 2 + (v[1] - d[1]) ** 2)/self.max_steps
+        v = self.vessel
+        d = self.destination
+        self.reward -= sqrt((v[0] - d[0]) ** 2 + (v[1] - d[1]) ** 2)/self.max_steps
 
         if self.destination == self.vessel:
             # self.score += 1
-            self.reward += 100
+            self.reward = 100
             # self.observation[self.vessel] = 2
             # self.new_destination()
             # self.observation[self.destination] = 1.5
             # self.step_count = 0
             done = True
-        elif self.hit_land() or self.step_count > self.max_steps:
-            self.reward -= 100
+        elif self.hit_land():
+            self.reward = -100
             done = True
-        # elif self.step_count == 30:
-        #     done = True
+        elif self.step_count > self.max_steps:
+            done = True
         else:
             self.land[self.vessel] = 2.
 
