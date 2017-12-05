@@ -157,10 +157,132 @@ class Navigation(gym.Env):
 
     def render(self, mode='human',close=True):
         # pass
-        fld = '/Users/davesteps/Google Drive/pycharmProjects/keras_RL/'
-        if 'images' not in os.listdir(fld):
-            os.mkdir(fld + 'images')
+        # fld = '/Users/davesteps/Google Drive/pycharmProjects/keras_RL/'
+        if 'images' not in os.listdir():
+            os.mkdir('images')
         # for i in range(len(frames)):
         plt.imshow(self.observation, interpolation='none')
-        plt.savefig(fld + 'images/' + str(self.step_count) + ".png")
+        plt.savefig('images/' + str(self.step_count) + ".png")
+
+
+class NavV2(gym.Env):
+    """Navigation
+
+    avoid hazards
+
+    """
+
+    def __init__(self, grid_size=10):
+        self.grid_size = grid_size
+        self.action_space = spaces.Discrete(4)
+        self.observation_space = spaces.Box(low=0., high=3., shape=(grid_size,grid_size))
+        self.observation = None
+        self.max_steps = int(sqrt(2 * (grid_size ** 2))) + grid_size
+
+        # self._seed()
+        self._reset()
+
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
+
+    def _reset(self):
+        self.vessel = (self.randCoord(), self.randCoord())
+        self.new_destination()
+        self.reward = 0
+        self.step_count = 0
+
+        self.env = np.ones((self.grid_size,) * 2)
+        self.env[1:-1, 1:-1] = 0.
+        self.env[self.randLand(), self.randLand()] = 1
+        self.env[self.destination] = 2.
+
+        self.build_reward_map()
+
+        self.env[self.vessel] = 3.
+
+        return self.env
+
+
+    def _step(self, action):
+
+        #assert self.action_space.contains(action)
+
+        self.env[self.vessel] = 0
+        self.move_vessel(action)
+
+        done = False
+        self.reward = self.reward_map[self.vessel]
+        self.step_count += 1
+
+        if self.reached_destination():
+            done = True
+        elif self.hit_land():
+            done = True
+        elif self.reached_max_steps():
+            done = True
+        else:
+            self.env[self.vessel] = 3.
+
+        return self.env,  self.reward, done, {}
+
+    def hit_land(self):
+        return self.env[self.vessel] == 1
+
+    def reached_destination(self):
+        return self.destination == self.vessel
+
+    def reached_max_steps(self):
+        return self.step_count > self.max_steps
+
+    def _render(self, mode='human', close=True):
+        pass
+
+    def move_vessel(self, action):
+
+        v = self.vessel
+
+        if action == 0:
+            self.vessel = (v[0] - 1, v[1])
+        elif action == 1:
+            self.vessel = (v[0] + 1, v[1])
+        elif action == 2:
+            self.vessel = (v[0], v[1] - 1)
+        elif action == 3:
+            self.vessel = (v[0], v[1] + 1)
+
+    def new_destination(self):
+        self.destination = (self.randCoord(), self.randCoord())
+        while self.destination == self.vessel:
+            self.destination = (self.randCoord(), self.randCoord())
+
+    def build_reward_map(self):
+
+        self.reward_map = self.env.copy()
+
+        x0 = self.vessel[0]
+        x1 = self.destination[0]
+
+        y0 = self.vessel[1]
+        y1 = self.destination[1]
+        num = self.grid_size ** 2
+
+        x = np.linspace(x0, x1, num).astype(int)
+        y = np.linspace(y0, y1, num).astype(int)
+
+        lst_cst = np.array((x, y)).T
+        lst_cst = np.unique(lst_cst, axis=0)
+
+        for i in lst_cst:
+            self.reward_map[i[0], i[1]] = -.5
+
+        self.reward_map[self.destination] = 100.
+        self.reward_map[self.env == 1] = -100.
+        self.reward_map[self.reward_map == 0] = -1.
+
+    def randCoord(self):
+        return int(np.random.randint(1, self.grid_size - 1, 1))
+
+    def randLand(self):
+        return np.random.randint(1, self.grid_size - 1, int((self.grid_size ** 2) * 0.1))
 
