@@ -187,7 +187,7 @@ class NavV2(gym.Env):
         return [seed]
 
     def _reset(self):
-        self.vessel = (self.randCoord(), self.randCoord())
+        self.vessel = (self.randCoord(), 1)
         self.new_destination()
         self.reward = 0
         self.step_count = 0
@@ -201,12 +201,14 @@ class NavV2(gym.Env):
 
         self.env[self.vessel] = 3.
 
-        return self.env
+        self.observation = self.env.copy()
+
+        return self.observation
 
 
     def _step(self, action):
 
-        #assert self.action_space.contains(action)
+        assert self.action_space.contains(action)
 
         self.env[self.vessel] = 0
         self.move_vessel(action)
@@ -224,7 +226,9 @@ class NavV2(gym.Env):
         else:
             self.env[self.vessel] = 3.
 
-        return self.env,  self.reward, done, {}
+        self.observation = self.env.copy()
+
+        return self.observation,  self.reward, done, {}
 
     def hit_land(self):
         return self.env[self.vessel] == 1
@@ -235,8 +239,14 @@ class NavV2(gym.Env):
     def reached_max_steps(self):
         return self.step_count > self.max_steps
 
-    def _render(self, mode='human', close=True):
-        pass
+    def render(self, mode='human',close=True):
+        # pass
+        # fld = '/Users/davesteps/Google Drive/pycharmProjects/keras_RL/'
+        if 'images' not in os.listdir():
+            os.mkdir('images')
+        # for i in range(len(frames)):
+        plt.imshow(self.env, interpolation='none')
+        plt.savefig('images/' + str(self.step_count) + ".png")
 
     def move_vessel(self, action):
 
@@ -252,37 +262,29 @@ class NavV2(gym.Env):
             self.vessel = (v[0], v[1] + 1)
 
     def new_destination(self):
-        self.destination = (self.randCoord(), self.randCoord())
-        while self.destination == self.vessel:
-            self.destination = (self.randCoord(), self.randCoord())
+        self.destination = (self.grid_size-4, self.grid_size-2)
+        # while self.destination == self.vessel:
+        #     self.destination = (self.randCoord(), self.randCoord())
 
     def build_reward_map(self):
 
-        self.reward_map = self.env.copy()
+        dx = self.destination[0]
+        dy = self.destination[1]
 
-        x0 = self.vessel[0]
-        x1 = self.destination[0]
+        xd = ((dx + 1) - np.arange(1, self.grid_size+1)) ** 2
+        yd = ((dy + 1) - np.arange(1, self.grid_size+1)) ** 2
 
-        y0 = self.vessel[1]
-        y1 = self.destination[1]
-        num = self.grid_size ** 2
+        dm = xd.reshape(self.grid_size, 1) + yd
+        dm = np.sqrt(dm)
 
-        x = np.linspace(x0, x1, num).astype(int)
-        y = np.linspace(y0, y1, num).astype(int)
+        self.reward_map = -(np.round(dm / dm.max(), 1) + 1)
 
-        lst_cst = np.array((x, y)).T
-        lst_cst = np.unique(lst_cst, axis=0)
-
-        for i in lst_cst:
-            self.reward_map[i[0], i[1]] = -.5
-
-        self.reward_map[self.destination] = 100.
         self.reward_map[self.env == 1] = -100.
-        self.reward_map[self.reward_map == 0] = -1.
+        self.reward_map[self.destination] = 100.
 
     def randCoord(self):
         return int(np.random.randint(1, self.grid_size - 1, 1))
 
     def randLand(self):
-        return np.random.randint(1, self.grid_size - 1, int((self.grid_size ** 2) * 0.1))
+        return np.random.randint(1, self.grid_size - 1, int((self.grid_size ** 2) * 0.05))
 
