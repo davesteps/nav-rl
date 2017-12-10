@@ -24,7 +24,8 @@ from rl.policy import BoltzmannQPolicy, LinearAnnealedPolicy, EpsGreedyQPolicy
 from rl.memory import SequentialMemory
 
 # env = Navigation(grid_size=40)
-env = NavV2(grid_size=20)
+env = NavV2(grid_size=30)
+env.max_steps
 
 mem_len = 1
 
@@ -53,7 +54,7 @@ memory = SequentialMemory(limit=50000, window_length=mem_len)
 
 # policy = BoltzmannQPolicy(tau=0.05)
 policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=.1,
-                              nb_steps=9e6)
+                              nb_steps=1e7)
 
 agent = DQNAgent(model=model, nb_actions=nb_actions, policy=policy, memory=memory,
                  nb_steps_warmup=50000, gamma=.99, target_model_update=10000,
@@ -68,9 +69,9 @@ agent.compile(Adam(lr=.00025), metrics=['mae'])
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
-agent.fit(env, nb_steps=1e7, log_interval=10000,verbose=1)
-agent.save_weights('dqn_nav2_20x20x1_2conv_1e7')
-# agent.load_weights('dqn_nav2_12x12_1.5m')
+# agent.fit(env, nb_steps=1.1e7, log_interval=10000,verbose=1)
+# agent.save_weights('dqn_nav2_30x30x1_2conv_1e7',overwrite=True)
+agent.load_weights('dqn_nav2_30x30x1_2conv_1e7')
 #
 # Finally, evaluate our algorithm for 5 episodes.
 agent.test(env, nb_episodes=1,visualize=True)
