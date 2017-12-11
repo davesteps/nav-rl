@@ -189,6 +189,12 @@ class NavigationV2(gym.Env):
         return [seed]
 
     def _reset(self):
+        """
+             Resets the state of the environment and returns an initial observation.
+
+             # Returns
+                 observation (object): The initial observation of the space. Initial reward is assumed to be 0.
+        """
         self.vessel = (2,2)#(self.randCoord(), 1)
         self.new_destination()
         self.reward = 0
@@ -224,7 +230,16 @@ class NavigationV2(gym.Env):
 
 
     def _step(self, action):
-
+        """Run one timestep of the environment's dynamics.
+        Accepts an action and returns a tuple (observation, reward, done, info).
+        # Arguments
+            action (object): An action provided by the environment.
+        # Returns
+            observation (object): Agent's observation of the current environment.
+            reward (float) : Amount of reward returned after previous action.
+            done (boolean): Whether the episode has ended, in which case further step() calls will return undefined results.
+            info (dict): Contains auxiliary diagnostic information (helpful for debugging, and sometimes learning).
+        """
         assert self.action_space.contains(action)
 
         # self.env[self.vessel] = 0
