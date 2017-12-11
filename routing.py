@@ -3,8 +3,11 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 from math import sqrt
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
+
 
 
 class Navigation(gym.Env):
@@ -285,7 +288,8 @@ class NavigationV2(gym.Env):
         if 'images' not in os.listdir():
             os.mkdir('images')
         # for i in range(len(frames)):
-        plt.imshow(self.observation, interpolation='none')
+        plt.ioff()
+        plt.imshow(self.observation)
         plt.savefig('images/' + str(self.step_count) + ".png")
 
     def move_vessel(self, action):
