@@ -23,7 +23,7 @@ from rl.memory import SequentialMemory
 
 # env = Navigation(grid_size=40)
 # env = NavV2(grid_size=30)
-env = NavigationV2(grid_size=30,mv_hzds=True,rndmLnd=0.05)
+env = NavigationV2(grid_size=30,random_land=.05,inc_mvng_hzd=True)
 env.max_steps
 
 mem_len = 1

@@ -175,14 +175,14 @@ class NavigationV2(gym.Env):
 
     """
 
-    def __init__(self, grid_size=10, rndmLnd=0, mv_hzds = False):
+    def __init__(self, grid_size=10, random_land=0, inc_mvng_hzd = False):
         self.grid_size = grid_size
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(low=0., high=3., shape=(grid_size,grid_size))
         self.observation = None
         self.max_steps = int(sqrt(2 * (grid_size ** 2))) + grid_size
-        self.rndmLnd = rndmLnd
-        self.mv_hzds = mv_hzds
+        self.random_land = random_land
+        self.inc_mvng_hzd = inc_mvng_hzd
 
         # self._seed()
         self._reset()
@@ -205,17 +205,17 @@ class NavigationV2(gym.Env):
 
         self.env = np.ones((self.grid_size,) * 2)
         self.env[1:-1, 1:-1] = 0.
-        if self.rndmLnd:
+        if self.random_land:
             self.env[self.randLand(), self.randLand()] = 1
 
         self.land_mask = self.env == 1
 
-        if self.mv_hzds:
+        if self.inc_mvng_hzd:
             yint = np.random.randint(9, 20)
             slope = np.random.randint(-12, 12)/10
             size = np.random.randint(30, 60)/10
             speed = np.random.randint(9, 12)/10
-            self.mvngHzrd = movingHazard(yint, slope, size, self.grid_size, speed)
+            self.moving_hazard = movingHazard(yint, slope, size, self.grid_size, speed)
 
         self.build_reward_map()
         self.build_observation()
@@ -224,7 +224,7 @@ class NavigationV2(gym.Env):
 
     def build_observation(self):
         self.observation = self.env.copy()
-        if self.mv_hzds:
+        if self.inc_mvng_hzd:
             self.observation[self.moving_hazard_state()] = 2.
             self.observation[self.land_mask] = 1.
 
@@ -255,7 +255,7 @@ class NavigationV2(gym.Env):
         if self.hit_land():
             done = True
             self.reward = -100
-        elif self.mv_hzds and self.hit_moving_hzrd():
+        elif self.inc_mvng_hzd and self.hit_moving_hzrd():
             self.reward = -10
         elif self.reached_max_steps():
             done = True
@@ -271,7 +271,7 @@ class NavigationV2(gym.Env):
         return self.moving_hazard_state()[self.vessel]
 
     def moving_hazard_state(self):
-        return self.mvngHzrd.current_state(self.step_count).astype(bool)
+        return self.moving_hazard.current_state(self.step_count).astype(bool)
 
     def hit_land(self):
         return self.env[self.vessel] == 1
@@ -327,7 +327,7 @@ class NavigationV2(gym.Env):
         return np.random.randint(1, self.grid_size - 1)
 
     def randLand(self):
-        return np.random.randint(1, self.grid_size - 1, int((self.grid_size ** 2) * self.rndmLnd))
+        return np.random.randint(1, self.grid_size - 1, int((self.grid_size ** 2) * self.random_land))
 
 
 class movingHazard():
