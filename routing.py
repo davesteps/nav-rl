@@ -208,7 +208,7 @@ class NavigationV2(gym.Env):
         self.land_mask = self.env == 1
 
         if self.mv_hzds:
-            yint = np.random.randint(4, 25)
+            yint = np.random.randint(9, 20)
             slope = np.random.randint(-12, 12)/10
             size = np.random.randint(30, 60)/10
             speed = np.random.randint(9, 12)/10

@@ -1,5 +1,7 @@
 
 """To Do
+# learning rate adjust
+# experience memory size increase (in the paper they suggest 1m)
 # agent can stop
 # moving obstacles
 # increase grid size
@@ -60,9 +62,11 @@ agent.compile(Adam(lr=.00025), metrics=['mae'])
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
-agent.fit(env, nb_steps=1.1e7, log_interval=10000,verbose=1)
+agent.fit(env, nb_steps=1e4, log_interval=10000,verbose=1)
 # agent.save_weights('dqn_nav2_30x30x1_2conv_1e7',overwrite=True)
 # agent.load_weights('model6_1bc90f81b393690023efa0cb0e4bb69935ee4b64/dqn_nav2_30x30x1_2conv_1e7')
 #
+
+
 # Finally, evaluate our algorithm for 5 episodes.
 agent.test(env, nb_episodes=1,visualize=True)
