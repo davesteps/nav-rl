@@ -165,19 +165,21 @@ class Navigation(gym.Env):
         plt.savefig('images/' + str(self.step_count) + ".png")
 
 
-class NavV2(gym.Env):
+class NavigationV2(gym.Env):
     """Navigation
 
     avoid hazards
 
     """
 
-    def __init__(self, grid_size=10):
+    def __init__(self, grid_size=10, rndmLnd=0, mv_hzds = False):
         self.grid_size = grid_size
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(low=0., high=3., shape=(grid_size,grid_size))
         self.observation = None
         self.max_steps = int(sqrt(2 * (grid_size ** 2))) + grid_size
+        self.rndmLnd = rndmLnd
+        self.mv_hzds = mv_hzds
 
         # self._seed()
         self._reset()
@@ -187,48 +189,71 @@ class NavV2(gym.Env):
         return [seed]
 
     def _reset(self):
-        self.vessel = (self.randCoord(), 1)
+        self.vessel = (2,2)#(self.randCoord(), 1)
         self.new_destination()
         self.reward = 0
         self.step_count = 0
 
         self.env = np.ones((self.grid_size,) * 2)
         self.env[1:-1, 1:-1] = 0.
-        self.env[self.randLand(), self.randLand()] = 1
-        self.env[self.destination] = 2.
+        if self.rndmLnd:
+            self.env[self.randLand(), self.randLand()] = 1
+
+        self.land_mask = self.env == 1
+
+        if self.mv_hzds:
+            yint = np.random.randint(4, 25)
+            slope = np.random.randint(-12, 12)/10
+            size = np.random.randint(30, 60)/10
+            speed = np.random.randint(9, 12)/10
+            self.mvngHzrd = movingHazard(yint, slope, size, self.grid_size, speed)
 
         self.build_reward_map()
-
-        self.env[self.vessel] = 3.
-
-        self.observation = self.env.copy()
+        self.build_observation()
 
         return self.observation
+
+    def build_observation(self):
+        self.observation = self.env.copy()
+        if self.mv_hzds:
+            self.observation[self.moving_hazard_state()] = 2.
+            self.observation[self.land_mask] = 1.
+
+        self.observation[self.destination] = 3.
+        self.observation[self.vessel] = 4.
 
 
     def _step(self, action):
 
         assert self.action_space.contains(action)
 
-        self.env[self.vessel] = 0
+        # self.env[self.vessel] = 0
         self.move_vessel(action)
 
         done = False
         self.reward = self.reward_map[self.vessel]
         self.step_count += 1
 
-        if self.reached_destination():
+        if self.hit_land():
             done = True
-        elif self.hit_land():
-            done = True
+            self.reward = -100
+        elif self.mv_hzds and self.hit_moving_hzrd():
+            self.reward = -10
         elif self.reached_max_steps():
             done = True
-        else:
-            self.env[self.vessel] = 3.
+        elif self.reached_destination():
+            done = True
+            self.reward = 100
 
-        self.observation = self.env.copy()
+        self.build_observation()
 
-        return self.observation,  self.reward, done, {}
+        return self.observation, self.reward, done, {}
+
+    def hit_moving_hzrd(self):
+        return self.moving_hazard_state()[self.vessel]
+
+    def moving_hazard_state(self):
+        return self.mvngHzrd.current_state(self.step_count).astype(bool)
 
     def hit_land(self):
         return self.env[self.vessel] == 1
@@ -245,7 +270,7 @@ class NavV2(gym.Env):
         if 'images' not in os.listdir():
             os.mkdir('images')
         # for i in range(len(frames)):
-        plt.imshow(self.env, interpolation='none')
+        plt.imshow(self.observation, interpolation='none')
         plt.savefig('images/' + str(self.step_count) + ".png")
 
     def move_vessel(self, action):
@@ -262,7 +287,7 @@ class NavV2(gym.Env):
             self.vessel = (v[0], v[1] + 1)
 
     def new_destination(self):
-        self.destination = (self.grid_size-4, self.grid_size-2)
+        self.destination = (self.grid_size-4, self.grid_size-4)
         # while self.destination == self.vessel:
         #     self.destination = (self.randCoord(), self.randCoord())
 
@@ -279,12 +304,44 @@ class NavV2(gym.Env):
 
         self.reward_map = -(np.round(dm / dm.max(), 1) + 1)
 
-        self.reward_map[self.env == 1] = -100.
-        self.reward_map[self.destination] = 100.
-
     def randCoord(self):
-        return int(np.random.randint(1, self.grid_size - 1, 1))
+        return np.random.randint(1, self.grid_size - 1)
 
     def randLand(self):
-        return np.random.randint(1, self.grid_size - 1, int((self.grid_size ** 2) * 0.05))
+        return np.random.randint(1, self.grid_size - 1, int((self.grid_size ** 2) * self.rndmLnd))
+
+
+class movingHazard():
+
+    def __init__(self, yintercept, slope, size, gridsize, speed):
+
+        self.yintercept = yintercept
+        self.slope = slope
+        r = size
+        self.speed = speed
+        gs = gridsize
+
+
+        self.xv = np.arange(0, gs)
+        self.yv = (yintercept + slope * self.xv).astype(int)
+
+        dist = np.sqrt((self.xv ** 2) + ((self.yv - yintercept) ** 2))
+
+        self.timesteps = np.round(dist / speed, 0).astype(int)
+
+        self.grid = np.zeros((gs, gs, self.timesteps.shape[0]))
+
+        for i in range(0, self.grid.shape[2]):
+            a, b = self.yv[i], self.xv[i]
+            y, x = np.ogrid[-a:gs - a, -b:gs - b]
+            mask = x * x + y * y <= r * r
+            self.grid[:, :, i][mask] = 1
+
+
+    def current_state(self, timestep):
+        # given timestep return xy of storm center
+        i = np.where(self.timesteps <= timestep)[0][-1]
+
+        return(self.grid[:, :, i])
+
 
