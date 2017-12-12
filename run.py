@@ -1,11 +1,11 @@
 
 """To Do
-# learning rate adjust
-# experience memory size increase (in the paper they suggest 1m)
+- other learning algorithms
+- learning rate adjust
+- experience memory size increase (in the paper they suggest 1m)
 - test dueling dqn
 
 # agent can stop
-# moving obstacles
 # increase grid size
 # increase size and change shape of target
 # geographical realistic region
@@ -25,7 +25,7 @@ from rl.memory import SequentialMemory
 
 # env = Navigation(grid_size=40)
 # env = NavV2(grid_size=30)
-env = NavigationV2(grid_size=20,random_land=.05,inc_mvng_hzd=True)
+env = NavigationV2(grid_size=30,random_land=.05,inc_mvng_hzd=True)
 env.max_steps
 
 mem_len = 3
@@ -66,7 +66,7 @@ agent.compile(Adam(lr=.00025), metrics=['mae'])
 # Ctrl + C.
 # agent.fit(env, nb_steps=1e4, log_interval=10000,verbose=1)
 # agent.save_weights('dqn_nav2_30x30x1_2conv_1e7',overwrite=True)
-agent.load_weights('model7_6c01ba5f786ebd5938ca8e8f75008a63d2fe11bd/dqn_nav2_20x20x3_2conv_1e7_mvnghzd')
+agent.load_weights('model8_6c01ba5f786ebd5938ca8e8f75008a63d2fe11bd/dqn_nav2_30x30x3_2conv_1e7_mvhz')
 #
 
 
@@ -74,4 +74,4 @@ agent.load_weights('model7_6c01ba5f786ebd5938ca8e8f75008a63d2fe11bd/dqn_nav2_20x
 for i in range(1,21):
     print(i)
     agent.test(env, nb_episodes=1,visualize=True)
-    makegif('images/','model7_6c01ba5f786ebd5938ca8e8f75008a63d2fe11bd/movie'+str(i),delete_files=True)
+    makegif('images/','model8_6c01ba5f786ebd5938ca8e8f75008a63d2fe11bd/movie'+str(i),delete_files=True)
