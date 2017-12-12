@@ -3,8 +3,8 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 from math import sqrt
-import matplotlib
-matplotlib.use('Agg')
+# import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 
@@ -211,7 +211,7 @@ class NavigationV2(gym.Env):
         self.land_mask = self.env == 1
 
         if self.inc_mvng_hzd:
-            yint = np.random.randint(9, 20)
+            yint = np.random.randint(7, 13)
             slope = np.random.randint(-12, 12)/10
             size = np.random.randint(30, 60)/10
             speed = np.random.randint(9, 12)/10
@@ -288,7 +288,7 @@ class NavigationV2(gym.Env):
         if 'images' not in os.listdir():
             os.mkdir('images')
         # for i in range(len(frames)):
-        plt.ioff()
+        # plt.ioff()
         plt.imshow(self.observation)
         plt.savefig('images/' + str(self.step_count) + ".png")
 
