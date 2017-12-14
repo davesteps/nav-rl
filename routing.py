@@ -20,7 +20,7 @@ class Navigation(gym.Env):
 
         self.grid_size = grid_size
         self.action_space = spaces.Discrete(4)
-        self.observation_space = spaces.Box(low=0., high=3., shape=(grid_size,grid_size))
+        self.observation_space = spaces.Box(low=0., high=4., shape=(grid_size,grid_size))
         self.observation = None
         self.max_steps = int(sqrt(2*(grid_size**2)))+grid_size
 
@@ -133,8 +133,8 @@ class Navigation(gym.Env):
              Resets the state of the environment and returns an initial observation.
 
              # Returns
-                 observation (object): The initial observation of the space. Initial reward is assumed to be 0.
-             """
+        observation (object): The initial observation of the space. Initial reward is assumed to be 0.
+        """
         vx = int(np.random.randint(1, self.grid_size - 1,1))
         vy = int(np.random.randint(1, self.grid_size - 1,1))
         self.vessel = (vx, vy)
@@ -175,14 +175,16 @@ class NavigationV2(gym.Env):
 
     """
 
-    def __init__(self, grid_size=10, random_land=0, inc_mvng_hzd = False):
+    def __init__(self, grid_size=10, random_land=0, inc_mvng_hzd = False, target_size = 1,vessel_size=0):
         self.grid_size = grid_size
         self.action_space = spaces.Discrete(4)
-        self.observation_space = spaces.Box(low=0., high=3., shape=(grid_size,grid_size))
+        self.observation_space = spaces.Box(low=0., high=4., shape=(grid_size,grid_size))
         self.observation = None
         self.max_steps = int(sqrt(2 * (grid_size ** 2))) + grid_size
         self.random_land = random_land
         self.inc_mvng_hzd = inc_mvng_hzd
+        self.target_size = target_size
+        self.vessel_size = vessel_size
 
         # self._seed()
         self._reset()
@@ -198,7 +200,7 @@ class NavigationV2(gym.Env):
              # Returns
                  observation (object): The initial observation of the space. Initial reward is assumed to be 0.
         """
-        self.vessel = (2,2)#(self.randCoord(), 1)
+        self.new_vessel()
         self.new_destination()
         self.reward = 0
         self.step_count = 0
@@ -206,7 +208,10 @@ class NavigationV2(gym.Env):
         self.env = np.ones((self.grid_size,) * 2)
         self.env[1:-1, 1:-1] = 0.
         if self.random_land:
-            self.env[self.randLand(), self.randLand()] = 1
+            self.env[self.randLand(), self.randLand()] = 1.
+            # make sure vessel start and destination is not land
+            self.env[self.vessel] = 0.
+            self.env[self.destination_mask] = 0.
 
         self.land_mask = self.env == 1
 
@@ -224,12 +229,13 @@ class NavigationV2(gym.Env):
 
     def build_observation(self):
         self.observation = self.env.copy()
+        self.observation[self.vessel_mask] = 4.
         if self.inc_mvng_hzd:
             self.observation[self.moving_hazard_state()] = 2.
             self.observation[self.land_mask] = 1.
 
-        self.observation[self.destination] = 3.
-        self.observation[self.vessel] = 4.
+        self.observation[self.destination_mask] = 3.
+
 
 
     def _step(self, action):
@@ -305,10 +311,27 @@ class NavigationV2(gym.Env):
         elif action == 3:
             self.vessel = (v[0], v[1] + 1)
 
+        self.update_vessel_mask()
+
+    def new_vessel(self):
+        self.vessel = self.vessel = (self.randCoord(), self.randCoord())
+        self.update_vessel_mask()
+
+    def update_vessel_mask(self):
+        a, b = self.vessel[0], self.vessel[1]
+        y, x = np.ogrid[-a:self.grid_size - a, -b:self.grid_size - b]
+        self.vessel_mask = x * x + y * y <= self.vessel_size * self.vessel_size
+
     def new_destination(self):
-        self.destination = (self.grid_size-4, self.grid_size-4)
-        # while self.destination == self.vessel:
-        #     self.destination = (self.randCoord(), self.randCoord())
+        self.destination = (self.randCoord(), self.randCoord())
+        while self.destination == self.vessel:
+            self.destination = (self.randCoord(), self.randCoord())
+
+        a, b = self.destination[0], self.destination[1]
+        y, x = np.ogrid[-a:self.grid_size - a, -b:self.grid_size - b]
+
+        self.destination_mask = x * x + y * y <= self.target_size * self.target_size
+
 
     def build_reward_map(self):
 

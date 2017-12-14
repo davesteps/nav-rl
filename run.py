@@ -4,7 +4,9 @@
 - learning rate adjust
 - experience memory size increase (in the paper they suggest 1m)
 - test dueling dqn
+- plot training loss
 
+# crossing traffic example
 # agent can stop
 # increase grid size
 # increase size and change shape of target
